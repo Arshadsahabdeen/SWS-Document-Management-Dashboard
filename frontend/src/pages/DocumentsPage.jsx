@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { deleteDocument, downloadDocument, getDocuments } from "../services/api.js";
 import { formatFileSize } from "../components/FileCard.jsx";
@@ -21,6 +21,8 @@ function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortOption, setSortOption] = useState("newest");
   const totalStorage = documents.reduce((sum, document) => sum + (document.size || 0), 0);
   const lastUpload = documents
     .map((document) => document.uploadDate || document.createdAt)
@@ -89,6 +91,41 @@ function DocumentsPage() {
     }
   };
 
+  const filteredDocuments = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return documents;
+    return documents.filter((document) =>
+      String(document.name || "").toLowerCase().includes(query)
+    );
+  }, [documents, searchQuery]);
+
+  const sortedDocuments = useMemo(() => {
+    const list = [...filteredDocuments];
+    const byName = (a, b) => String(a.name || "").localeCompare(String(b.name || ""));
+    const bySize = (a, b) => (a.size || 0) - (b.size || 0);
+    const byDate = (a, b) => {
+      const aDate = new Date(a.uploadDate || a.createdAt || 0).getTime();
+      const bDate = new Date(b.uploadDate || b.createdAt || 0).getTime();
+      return aDate - bDate;
+    };
+
+    switch (sortOption) {
+      case "oldest":
+        return list.sort(byDate);
+      case "name-asc":
+        return list.sort(byName);
+      case "name-desc":
+        return list.sort((a, b) => byName(b, a));
+      case "size-desc":
+        return list.sort((a, b) => bySize(b, a));
+      case "size-asc":
+        return list.sort(bySize);
+      case "newest":
+      default:
+        return list.sort((a, b) => byDate(b, a));
+    }
+  }, [filteredDocuments, sortOption]);
+
   return (
     <div className="space-y-6">
       <div>
@@ -126,11 +163,64 @@ function DocumentsPage() {
       </section>
 
       <section className="dashboard-card overflow-hidden">
-        <div className="flex items-center justify-between border-b border-blue-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-slate-950">Managed Documents</h2>
-          <button type="button" className="secondary-button" onClick={loadDocuments}>
-            Refresh
-          </button>
+        <div className="border-b border-blue-100 px-5 py-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <h2 className="text-lg font-bold text-slate-950">Managed Documents</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Showing {sortedDocuments.length} document
+                {sortedDocuments.length === 1 ? "" : "s"}
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <div className="relative w-full sm:w-72">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                  <svg
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                  >
+                    <circle
+                      cx="11"
+                      cy="11"
+                      r="7"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    />
+                    <path
+                      d="M20 20l-3.5-3.5"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                </span>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Search documents..."
+                  className="w-full rounded-xl border border-blue-100 bg-white py-2.5 pl-10 pr-3 text-sm font-semibold text-slate-700 shadow-sm transition focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+              <select
+                value={sortOption}
+                onChange={(event) => setSortOption(event.target.value)}
+                className="w-full rounded-xl border border-blue-100 bg-white px-3 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition focus:border-brand-500 focus:outline-none sm:w-56"
+              >
+                <option value="newest">Newest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name-asc">File Name (A-Z)</option>
+                <option value="name-desc">File Name (Z-A)</option>
+                <option value="size-desc">File Size (Largest First)</option>
+                <option value="size-asc">File Size (Smallest First)</option>
+              </select>
+              <button type="button" className="secondary-button sm:px-4" onClick={loadDocuments}>
+                Refresh
+              </button>
+            </div>
+          </div>
         </div>
 
         <div className="max-h-[480px] overflow-x-auto overflow-y-auto">
@@ -157,8 +247,8 @@ function DocumentsPage() {
                     </span>
                   </td>
                 </tr>
-              ) : documents.length ? (
-                documents.map((document) => (
+              ) : sortedDocuments.length ? (
+                sortedDocuments.map((document) => (
                   <tr key={document._id} className="transition hover:bg-blue-50/50">
                     <td className="max-w-xs truncate px-5 py-4 text-sm font-semibold text-slate-900">
                       {document.name}
@@ -267,7 +357,9 @@ function DocumentsPage() {
               ) : (
                 <tr>
                   <td colSpan="5" className="px-5 py-10 text-center text-sm font-medium text-slate-500">
-                    No documents uploaded yet. Upload your first PDF to begin.
+                    {searchQuery.trim()
+                      ? "No documents match your search."
+                      : "No documents uploaded yet. Upload your first PDF to begin."}
                   </td>
                 </tr>
               )}
