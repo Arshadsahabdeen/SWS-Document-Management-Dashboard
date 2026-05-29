@@ -139,7 +139,7 @@ function UploadPage() {
             Upload Center
           </p>
           <h1 className="mt-1 text-3xl font-bold text-slate-950">
-            Company PDF Documents
+            Secure Document Hub
           </h1>
         </div>
         <div className="flex gap-3">
@@ -172,6 +172,48 @@ function UploadPage() {
       <UploadZone onFilesSelected={handleFilesSelected} disabled={isUploading} />
 
       <section className="dashboard-card p-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Selected Files
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">
+              {selectedFiles.length}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Total Size
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">
+              {(totalSize / (1024 * 1024)).toFixed(1)} MB
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Supported
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">PDF</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Max Size
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">20 MB</p>
+          </div>
+        </div>
+      </section>
+
+      {isUploading && selectedFiles.length > 3 ? (
+        <section className="dashboard-card flex flex-col gap-2 border-blue-200 bg-blue-50/60 p-5 text-sm font-semibold text-brand-700">
+          <span className="text-xs font-semibold uppercase tracking-wide text-brand-600">
+            Background Processing
+          </span>
+          {selectedFiles.length} files currently being processed
+        </section>
+      ) : null}
+
+      <section className="dashboard-card p-5">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-slate-950">Selected Files</h2>
@@ -193,7 +235,7 @@ function UploadPage() {
           </div>
         ) : (
           <div className="mt-5 rounded-2xl border border-dashed border-blue-200 bg-blue-50/60 p-8 text-center text-sm font-medium text-slate-500">
-            No files selected
+            No files selected yet. Add a PDF to begin.
           </div>
         )}
       </section>

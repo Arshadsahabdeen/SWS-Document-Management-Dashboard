@@ -12,11 +12,14 @@ function Navbar({ unreadCount = 0 }) {
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <NavLink to="/" className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-600 text-sm font-bold text-white shadow-sm">
-            DD
+            FM
           </span>
-          <span className="text-lg font-bold text-slate-950">
-            Document Dashboard
-          </span>
+          <div>
+            <span className="block text-lg font-bold text-slate-950">FileMaster</span>
+            <span className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+              Smart Document Management Platform
+            </span>
+          </div>
         </NavLink>
         <div className="flex items-center gap-1 rounded-2xl bg-blue-50 p-1">
           {links.map((link) => (
@@ -26,7 +29,7 @@ function Navbar({ unreadCount = 0 }) {
               className={({ isActive }) =>
                 `relative rounded-xl px-3 py-2 text-sm font-semibold transition sm:px-4 ${
                   isActive
-                    ? "bg-white text-brand-700 shadow-sm"
+                    ? "bg-white text-brand-700 shadow-sm ring-1 ring-blue-100"
                     : "text-slate-600 hover:text-brand-700"
                 }`
               }

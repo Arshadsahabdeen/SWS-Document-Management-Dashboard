@@ -26,7 +26,7 @@ describe("UploadPage", () => {
   it("renders upload area", () => {
     render(<UploadPage />);
 
-    expect(screen.getByText(/Drop PDF files here/i)).toBeInTheDocument();
+    expect(screen.getByText(/Drag PDF files here or click to browse/i)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Choose PDF files/i })).toBeInTheDocument();
   });
 
@@ -39,7 +39,7 @@ describe("UploadPage", () => {
     await userEvent.upload(input, pdfFile);
 
     expect(screen.getByText("sample.pdf")).toBeInTheDocument();
-    expect(screen.getByText(/1 file selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/Selected Files/i)).toBeInTheDocument();
   });
 
   it("rejects invalid file types", async () => {

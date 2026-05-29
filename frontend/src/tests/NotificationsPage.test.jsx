@@ -131,6 +131,6 @@ describe("NotificationsPage", () => {
       />
     );
 
-    expect(screen.getByText(/No unread notifications/i)).toBeInTheDocument();
+    expect(screen.getByText(/No notifications available/i)).toBeInTheDocument();
   });
 });

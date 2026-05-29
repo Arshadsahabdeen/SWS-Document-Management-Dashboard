@@ -21,6 +21,11 @@ function DocumentsPage() {
   const [documents, setDocuments] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [deletingId, setDeletingId] = useState(null);
+  const totalStorage = documents.reduce((sum, document) => sum + (document.size || 0), 0);
+  const lastUpload = documents
+    .map((document) => document.uploadDate || document.createdAt)
+    .filter(Boolean)
+    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0];
 
   const loadDocuments = async () => {
     try {
@@ -79,20 +84,47 @@ function DocumentsPage() {
         <p className="text-sm font-semibold uppercase tracking-wide text-brand-600">
           Repository
         </p>
-        <h1 className="mt-1 text-3xl font-bold text-slate-950">Documents</h1>
+        <h1 className="mt-1 text-3xl font-bold text-slate-950">Document Repository</h1>
       </div>
+
+      <section className="dashboard-card p-5">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Total Documents
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">{documents.length}</p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Total Storage
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">
+              {formatFileSize(totalStorage)}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              Last Upload
+            </p>
+            <p className="mt-2 text-2xl font-bold text-slate-950">
+              {lastUpload ? formatDate(lastUpload) : "-"}
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section className="dashboard-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-blue-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-slate-950">Uploaded Files</h2>
+          <h2 className="text-lg font-bold text-slate-950">Managed Documents</h2>
           <button type="button" className="secondary-button" onClick={loadDocuments}>
             Refresh
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="max-h-[480px] overflow-x-auto overflow-y-auto">
           <table className="min-w-full divide-y divide-blue-100">
-            <thead className="bg-blue-50">
+            <thead className="sticky top-0 z-10 bg-blue-50">
               <tr>
                 {["Name", "Size", "Upload Date", "Status", "Actions"].map((heading) => (
                   <th
@@ -138,7 +170,29 @@ function DocumentsPage() {
                           className="secondary-button px-3 py-2"
                           onClick={() => handleDownload(document)}
                         >
-                          Download
+                          <span className="flex items-center gap-2">
+                            <svg
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
+                              <path
+                                d="M12 4v10m0 0 4-4m-4 4-4-4"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M4 18h16"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                              />
+                            </svg>
+                            Download
+                          </span>
                         </button>
                         <button
                           type="button"
@@ -146,7 +200,32 @@ function DocumentsPage() {
                           disabled={deletingId === document._id}
                           onClick={() => handleDelete(document._id)}
                         >
-                          {deletingId === document._id ? "Deleting" : "Delete"}
+                          <span className="flex items-center gap-2">
+                            <svg
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
+                              <path
+                                d="M4 7h16"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                                strokeLinecap="round"
+                              />
+                              <path
+                                d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                              <path
+                                d="M7 7l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                            </svg>
+                            {deletingId === document._id ? "Deleting" : "Delete"}
+                          </span>
                         </button>
                       </div>
                     </td>
@@ -155,7 +234,7 @@ function DocumentsPage() {
               ) : (
                 <tr>
                   <td colSpan="5" className="px-5 py-10 text-center text-sm font-medium text-slate-500">
-                    No documents found
+                    No documents uploaded yet. Upload your first PDF to begin.
                   </td>
                 </tr>
               )}

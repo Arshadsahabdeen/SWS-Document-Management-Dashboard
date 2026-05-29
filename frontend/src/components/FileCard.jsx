@@ -7,6 +7,13 @@ const statusStyles = {
   failed: "bg-rose-100 text-rose-700"
 };
 
+const statusLabels = {
+  pending: "Pending",
+  uploading: "Uploading",
+  complete: "Completed",
+  failed: "Failed"
+};
+
 function formatFileSize(bytes = 0) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -17,7 +24,7 @@ function FileCard({ file }) {
   const statusClass = statusStyles[file.status] || statusStyles.pending;
 
   return (
-    <article className="dashboard-card p-4">
+    <article className="dashboard-card p-4 transition hover:-translate-y-0.5 hover:shadow-soft">
       <div className="flex items-start gap-4">
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-sm font-bold text-brand-700 ring-1 ring-blue-100">
           PDF
@@ -33,10 +40,8 @@ function FileCard({ file }) {
                 {file.type || "application/pdf"}
               </p>
             </div>
-            <span
-              className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClass}`}
-            >
-              {file.status}
+            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClass}`}>
+              {statusLabels[file.status] || "Pending"}
             </span>
           </div>
           <div className="mt-4">

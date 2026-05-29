@@ -25,7 +25,15 @@ input {
 
 @layer components {
   .dashboard-card {
-    @apply rounded-2xl border border-blue-100 bg-white shadow-soft;
+    @apply rounded-2xl border border-blue-100 bg-white shadow-sm transition;
+  }
+
+  .dashboard-hero {
+    @apply rounded-3xl border border-blue-100 bg-white p-6 shadow-soft;
+  }
+
+  .stat-card {
+    @apply rounded-2xl border border-blue-100 bg-white px-4 py-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-soft;
   }
 
   .primary-button {
