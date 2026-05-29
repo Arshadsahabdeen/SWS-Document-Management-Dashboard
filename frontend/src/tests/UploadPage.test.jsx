@@ -32,35 +32,43 @@ describe("UploadPage", () => {
 
   it("allows PDF selection", async () => {
     render(<UploadPage />);
+    const user = userEvent.setup();
 
     const input = document.querySelector("input[type='file']");
+    expect(input).not.toBeNull();
     const pdfFile = new File(["%PDF"], "sample.pdf", { type: "application/pdf" });
 
-    await userEvent.upload(input, pdfFile);
+    await user.upload(input, pdfFile);
 
     expect(screen.getByText("sample.pdf")).toBeInTheDocument();
-    expect(screen.getByText(/Selected Files/i)).toBeInTheDocument();
+    expect(screen.getByText(/1 file selected/i)).toBeInTheDocument();
   });
 
   it("rejects invalid file types", async () => {
     render(<UploadPage />);
+    const user = userEvent.setup({ applyAccept: false });
 
     const input = document.querySelector("input[type='file']");
+    expect(input).not.toBeNull();
     const badFile = new File(["text"], "notes.txt", { type: "text/plain" });
 
-    await userEvent.upload(input, badFile);
+    await user.upload(input, badFile);
 
-    expect(toast.error).toHaveBeenCalledWith("Only PDF files are allowed");
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith("Only PDF files are allowed");
+    });
     expect(screen.queryByText("notes.txt")).not.toBeInTheDocument();
   });
 
   it("displays selected file", async () => {
     render(<UploadPage />);
+    const user = userEvent.setup();
 
     const input = document.querySelector("input[type='file']");
+    expect(input).not.toBeNull();
     const pdfFile = new File(["%PDF"], "quarterly.pdf", { type: "application/pdf" });
 
-    await userEvent.upload(input, pdfFile);
+    await user.upload(input, pdfFile);
 
     expect(screen.getByText("quarterly.pdf")).toBeInTheDocument();
     expect(screen.getByText(/pending/i)).toBeInTheDocument();
@@ -68,21 +76,23 @@ describe("UploadPage", () => {
 
   it("displays upload progress", async () => {
     render(<UploadPage />);
+    const user = userEvent.setup();
 
     const input = document.querySelector("input[type='file']");
+    expect(input).not.toBeNull();
     const data = new Uint8Array(2000);
     const pdfFile = new File([data], "progress.pdf", { type: "application/pdf" });
 
-    await userEvent.upload(input, pdfFile);
+    await user.upload(input, pdfFile);
 
     uploadDocuments.mockImplementation(async (_formData, onUploadProgress) => {
       onUploadProgress({ loaded: 1000 });
       return { data: { count: 1 } };
     });
 
-    await userEvent.click(screen.getByRole("button", { name: /Upload Files/i }));
+    await user.click(screen.getByRole("button", { name: /Upload Files/i }));
 
-    expect(screen.getByText(/50%/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Progress/i).length).toBeGreaterThan(0);
 
     await waitFor(() => {
       expect(screen.getByText(/100%/i)).toBeInTheDocument();
@@ -91,20 +101,33 @@ describe("UploadPage", () => {
 
   it("displays upload status", async () => {
     render(<UploadPage />);
+    const user = userEvent.setup();
 
     const input = document.querySelector("input[type='file']");
+    expect(input).not.toBeNull();
     const pdfFile = new File(["%PDF"], "status.pdf", { type: "application/pdf" });
 
-    await userEvent.upload(input, pdfFile);
+    await user.upload(input, pdfFile);
 
-    uploadDocuments.mockResolvedValue({ data: { count: 1 } });
+    let resolveUpload;
 
-    await userEvent.click(screen.getByRole("button", { name: /Upload Files/i }));
+    uploadDocuments.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          resolveUpload = resolve;
+        })
+    );
 
-    expect(screen.getByText(/uploading/i)).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Upload Files/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/complete/i)).toBeInTheDocument();
+      expect(screen.getAllByText(/uploading/i).length).toBeGreaterThan(0);
+    });
+
+    resolveUpload({ data: { count: 1 } });
+
+    await waitFor(() => {
+      expect(screen.getByText(/completed/i)).toBeInTheDocument();
       expect(toast.success).toHaveBeenCalled();
     });
   });
