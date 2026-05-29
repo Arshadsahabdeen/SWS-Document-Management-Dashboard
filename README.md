@@ -106,3 +106,22 @@ Frontend:
 - GridFS is used for file storage and the bucket name is `documents`.
 - Default ports are `5000` for the backend and `5173` for the frontend unless overridden.
 - Uploads accept PDF files only and enforce a 20MB per-file limit.
+
+## Workflow
+
+```mermaid
+flowchart TD
+	A[User uploads PDFs] --> B[Frontend validates and sends FormData]
+	B --> C[Express upload route]
+	C --> D[GridFS stores file]
+	C --> E[Document metadata saved]
+	E --> F[Notifications emitted via Socket.IO]
+	F --> G[Frontend updates notifications]
+	E --> H[Documents list refresh]
+	H --> I[Documents table updated]
+	I --> J[Download or View]
+	J --> K[GridFS stream to client]
+	I --> L[Delete document]
+	L --> M[GridFS file deleted]
+	L --> N[Metadata deleted]
+```
