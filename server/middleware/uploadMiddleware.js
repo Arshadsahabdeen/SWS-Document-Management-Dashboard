@@ -1,26 +1,10 @@
 const path = require("path");
 const multer = require("multer");
-const mongoose = require("mongoose");
-const { GridFsStorage } = require("multer-gridfs-storage");
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
+const MAX_FILES = 20;
 
-const storage = new GridFsStorage({
-  db: mongoose.connection.asPromise().then(() => mongoose.connection.db),
-  file: (req, file) => {
-    const timestamp = Date.now();
-    const safeOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-
-    return {
-      bucketName: "documents",
-      filename: `${timestamp}-${safeOriginalName}`,
-      contentType: "application/pdf",
-      metadata: {
-        originalName: file.originalname
-      }
-    };
-  }
-});
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const isPdfMime = file.mimetype === "application/pdf";
@@ -38,7 +22,7 @@ const upload = multer({
   fileFilter,
   limits: {
     fileSize: MAX_FILE_SIZE,
-    files: 20
+    files: MAX_FILES
   }
 });
 

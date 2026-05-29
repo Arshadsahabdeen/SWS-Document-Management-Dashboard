@@ -1,3 +1,4 @@
+const { Readable } = require("stream");
 const mongoose = require("mongoose");
 
 const { getDocumentsBucket } = require("../config/gridfs");
@@ -18,6 +19,8 @@ const getUploadedFiles = (req) => {
   return req.file ? [req.file] : [];
 };
 
+const escapeHeaderValue = (value) => String(value).replace(/["\\\r\n]/g, "_");
+
 const deleteGridFsFile = async (fileId) => {
   try {
     await getDocumentsBucket().delete(new mongoose.Types.ObjectId(fileId));
@@ -28,8 +31,33 @@ const deleteGridFsFile = async (fileId) => {
   }
 };
 
+const uploadFileToGridFs = (file) =>
+  new Promise((resolve, reject) => {
+    const bucket = getDocumentsBucket();
+    const safeOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filename = `${Date.now()}-${safeOriginalName}`;
+    const uploadStream = bucket.openUploadStream(filename, {
+      contentType: "application/pdf",
+      metadata: {
+        originalName: file.originalname
+      }
+    });
+
+    uploadStream.on("error", reject);
+    uploadStream.on("finish", (gridFile) => {
+      resolve({
+        id: gridFile._id,
+        length: gridFile.length,
+        uploadDate: gridFile.uploadDate
+      });
+    });
+
+    Readable.from(file.buffer).pipe(uploadStream);
+  });
+
 const uploadDocuments = async (req, res) => {
   const files = getUploadedFiles(req);
+  const uploadedGridFiles = [];
 
   try {
     if (!files.length) {
@@ -39,21 +67,24 @@ const uploadDocuments = async (req, res) => {
       });
     }
 
-    const documents = await Promise.all(
-      files.map((file) =>
-        Document.create({
-          name: file.originalname,
-          size: file.size,
-          type: file.mimetype || file.contentType || "application/pdf",
-          fileId: file.id,
-          status: "complete"
-        })
-      )
+    for (const file of files) {
+      const gridFile = await uploadFileToGridFs(file);
+      uploadedGridFiles.push({ ...gridFile, sourceFile: file });
+    }
+
+    const documents = await Document.insertMany(
+      uploadedGridFiles.map(({ id, sourceFile }) => ({
+        name: sourceFile.originalname,
+        size: sourceFile.size,
+        type: sourceFile.mimetype,
+        fileId: id,
+        status: "complete"
+      }))
     );
 
     if (files.length > 3) {
       await Notification.create({
-        message: `Upload in progress - processing ${files.length} files in background.`,
+        message: `Upload in progress — processing ${files.length} files in background.`,
         type: "info"
       });
     }
@@ -64,9 +95,9 @@ const uploadDocuments = async (req, res) => {
       documents
     });
   } catch (error) {
-    if (files.length) {
+    if (uploadedGridFiles.length) {
       try {
-        await Promise.all(files.filter((file) => file.id).map((file) => deleteGridFsFile(file.id)));
+        await Promise.all(uploadedGridFiles.map((file) => deleteGridFsFile(file.id)));
       } catch (cleanupError) {
         console.error("Failed to clean up GridFS files:", cleanupError.message);
       }
@@ -118,7 +149,7 @@ const downloadDocument = async (req, res) => {
 
     const bucket = getDocumentsBucket();
     const fileId = new mongoose.Types.ObjectId(document.fileId);
-    const files = await bucket.find({ _id: fileId }).toArray();
+    const files = await bucket.find({ _id: fileId }).limit(1).toArray();
 
     if (!files.length) {
       return res.status(404).json({
@@ -130,7 +161,7 @@ const downloadDocument = async (req, res) => {
     res.set({
       "Content-Type": "application/pdf",
       "Content-Length": files[0].length,
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(document.name)}"`
+      "Content-Disposition": `attachment; filename="${escapeHeaderValue(document.name)}"`
     });
 
     const downloadStream = bucket.openDownloadStream(fileId);
@@ -143,7 +174,7 @@ const downloadDocument = async (req, res) => {
         });
       }
 
-      return res.end();
+      return res.destroy();
     });
 
     return downloadStream.pipe(res);
