@@ -1,40 +1,42 @@
-import { useEffect, useState } from "react";
-import Header from "./components/Header.jsx";
-import { getHealthStatus } from "./services/api.js";
+import { Route, Routes } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import Navbar from "./components/Navbar.jsx";
+import UploadPage from "./pages/UploadPage.jsx";
+import DocumentsPage from "./pages/DocumentsPage.jsx";
+import NotificationsPage from "./pages/NotificationsPage.jsx";
 
 function App() {
-  const [status, setStatus] = useState("Checking backend...");
-
-  useEffect(() => {
-    const loadStatus = async () => {
-      try {
-        const data = await getHealthStatus();
-        setStatus(data.message);
-      } catch (error) {
-        setStatus("Backend not connected yet");
-      }
-    };
-
-    loadStatus();
-  }, []);
-
   return (
-    <div className="app-shell">
-      <Header />
-      <main className="hero">
-        <section className="hero-card">
-          <p className="eyebrow">MERN Stack Starter</p>
-          <h1>Frontend and backend are separated and ready to build on.</h1>
-          <p className="description">
-            This starter gives you a React frontend, an Express backend, and a
-            MongoDB connection layer with a simple API route.
-          </p>
-          <div className="status-box">
-            <span className="status-label">API Status</span>
-            <strong>{status}</strong>
-          </div>
-        </section>
+    <div className="min-h-screen bg-slate-50 font-livvic text-slate-900">
+      <Navbar />
+      <main className="mx-auto w-full max-w-7xl px-4 pb-10 pt-24 sm:px-6 lg:px-8">
+        <Routes>
+          <Route path="/" element={<UploadPage />} />
+          <Route path="/documents" element={<DocumentsPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+        </Routes>
       </main>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          duration: 3500,
+          className: "font-livvic",
+          success: {
+            style: {
+              background: "#eff6ff",
+              color: "#1e3a8a",
+              border: "1px solid #bfdbfe"
+            }
+          },
+          error: {
+            style: {
+              background: "#fff1f2",
+              color: "#9f1239",
+              border: "1px solid #fecdd3"
+            }
+          }
+        }}
+      />
     </div>
   );
 }
