@@ -65,6 +65,17 @@ function DocumentsPage() {
     }
   };
 
+  const handleView = async (document) => {
+    try {
+      const response = await downloadDocument(document._id);
+      const href = URL.createObjectURL(response.data);
+      window.open(href, "_blank", "noopener,noreferrer");
+      setTimeout(() => URL.revokeObjectURL(href), 1000);
+    } catch (error) {
+      toast.error(error.response?.data?.message || "View failed");
+    }
+  };
+
   const handleDelete = async (id) => {
     try {
       setDeletingId(id);
@@ -165,6 +176,28 @@ function DocumentsPage() {
                     </td>
                     <td className="px-5 py-4">
                       <div className="flex gap-2">
+                        <button
+                          type="button"
+                          className="secondary-button px-3 py-2"
+                          onClick={() => handleView(document)}
+                        >
+                          <span className="flex items-center gap-2">
+                            <svg
+                              aria-hidden="true"
+                              className="h-4 w-4"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                            >
+                              <path
+                                d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6-10-6-10-6z"
+                                stroke="currentColor"
+                                strokeWidth="1.5"
+                              />
+                              <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.5" />
+                            </svg>
+                            View
+                          </span>
+                        </button>
                         <button
                           type="button"
                           className="secondary-button px-3 py-2"

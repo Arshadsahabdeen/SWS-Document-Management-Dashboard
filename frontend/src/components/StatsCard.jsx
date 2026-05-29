@@ -1,3 +1,5 @@
+import { Link } from "react-router-dom";
+
 const accentStyles = {
   blue: "bg-blue-50 text-brand-700 ring-blue-100",
   emerald: "bg-emerald-50 text-emerald-700 ring-emerald-100",
@@ -5,11 +7,15 @@ const accentStyles = {
   rose: "bg-rose-50 text-rose-700 ring-rose-100"
 };
 
-function StatsCard({ label, value, helper, accent = "blue", icon }) {
+function StatsCard({ label, value, helper, accent = "blue", icon, to }) {
   const accentClass = accentStyles[accent] || accentStyles.blue;
+  const Wrapper = to ? Link : "div";
+  const wrapperProps = to
+    ? { to, className: "stat-card group" }
+    : { className: "stat-card" };
 
   return (
-    <div className="stat-card">
+    <Wrapper {...wrapperProps}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -24,7 +30,7 @@ function StatsCard({ label, value, helper, accent = "blue", icon }) {
           {icon}
         </div>
       </div>
-    </div>
+    </Wrapper>
   );
 }
 

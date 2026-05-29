@@ -144,6 +144,7 @@ function App() {
               value: documents.length.toString(),
               helper: "All managed files",
               accent: "blue",
+              to: "/documents",
               icon: (
                 <svg
                   aria-hidden="true"
@@ -191,6 +192,7 @@ function App() {
               value: unreadCount.toString(),
               helper: "Requires review",
               accent: "rose",
+              to: "/notifications",
               icon: (
                 <svg
                   aria-hidden="true"

@@ -51,6 +51,31 @@ npm run start
 npm test
 ```
 
+## Deployment Instructions
+
+1. Build the frontend:
+
+```bash
+cd frontend
+npm run build
+```
+
+2. Set environment variables on your server:
+
+- `MONGO_URI` (MongoDB connection string)
+- `PORT` (optional, defaults to 5000)
+
+3. Start the backend:
+
+```bash
+cd server
+npm run start
+```
+
+4. Serve the frontend build from a static host (Netlify/Vercel/S3) or your web server.
+
+If hosting frontend and backend on different origins, update the frontend API base URL in [frontend/src/services/api.js](frontend/src/services/api.js).
+
 ## Technologies Used
 
 Backend:
