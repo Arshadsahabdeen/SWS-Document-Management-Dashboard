@@ -1,17 +1,26 @@
-const fs = require("fs");
-const path = require("path");
 const mongoose = require("mongoose");
 
+const { getDocumentsBucket } = require("../config/gridfs");
 const Document = require("../models/Document");
 const Notification = require("../models/Notification");
 
-const removeFileIfExists = async (filePath) => {
-  if (!filePath) {
-    return;
+const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
+
+const getUploadedFiles = (req) => {
+  if (Array.isArray(req.files)) {
+    return req.files;
   }
 
+  if (req.files && typeof req.files === "object") {
+    return Object.values(req.files).flat();
+  }
+
+  return req.file ? [req.file] : [];
+};
+
+const deleteGridFsFile = async (fileId) => {
   try {
-    await fs.promises.unlink(filePath);
+    await getDocumentsBucket().delete(new mongoose.Types.ObjectId(fileId));
   } catch (error) {
     if (error.code !== "ENOENT") {
       throw error;
@@ -19,12 +28,10 @@ const removeFileIfExists = async (filePath) => {
   }
 };
 
-const isValidObjectId = (id) => mongoose.Types.ObjectId.isValid(id);
-
 const uploadDocuments = async (req, res) => {
-  try {
-    const files = req.files || [];
+  const files = getUploadedFiles(req);
 
+  try {
     if (!files.length) {
       return res.status(400).json({
         success: false,
@@ -37,8 +44,8 @@ const uploadDocuments = async (req, res) => {
         Document.create({
           name: file.originalname,
           size: file.size,
-          type: file.mimetype,
-          path: file.path,
+          type: file.mimetype || file.contentType || "application/pdf",
+          fileId: file.id,
           status: "complete"
         })
       )
@@ -46,7 +53,7 @@ const uploadDocuments = async (req, res) => {
 
     if (files.length > 3) {
       await Notification.create({
-        message: `Upload in progress — processing ${files.length} files in background.`,
+        message: `Upload in progress - processing ${files.length} files in background.`,
         type: "info"
       });
     }
@@ -57,11 +64,11 @@ const uploadDocuments = async (req, res) => {
       documents
     });
   } catch (error) {
-    if (req.files && req.files.length) {
+    if (files.length) {
       try {
-        await Promise.all(req.files.map((file) => removeFileIfExists(file.path)));
+        await Promise.all(files.filter((file) => file.id).map((file) => deleteGridFsFile(file.id)));
       } catch (cleanupError) {
-        console.error("Failed to clean up uploaded files:", cleanupError.message);
+        console.error("Failed to clean up GridFS files:", cleanupError.message);
       }
     }
 
@@ -109,24 +116,37 @@ const downloadDocument = async (req, res) => {
       });
     }
 
-    const filePath = path.resolve(document.path);
-    const fileExists = fs.existsSync(filePath);
+    const bucket = getDocumentsBucket();
+    const fileId = new mongoose.Types.ObjectId(document.fileId);
+    const files = await bucket.find({ _id: fileId }).toArray();
 
-    if (!fileExists) {
+    if (!files.length) {
       return res.status(404).json({
         success: false,
-        message: "File not found on disk"
+        message: "File not found"
       });
     }
 
-    return res.download(filePath, document.name, (error) => {
-      if (error && !res.headersSent) {
-        return res.status(500).json({
+    res.set({
+      "Content-Type": "application/pdf",
+      "Content-Length": files[0].length,
+      "Content-Disposition": `attachment; filename="${encodeURIComponent(document.name)}"`
+    });
+
+    const downloadStream = bucket.openDownloadStream(fileId);
+
+    downloadStream.on("error", () => {
+      if (!res.headersSent) {
+        return res.status(404).json({
           success: false,
-          message: "Failed to download document"
+          message: "File not found"
         });
       }
+
+      return res.end();
     });
+
+    return downloadStream.pipe(res);
   } catch (error) {
     return res.status(500).json({
       success: false,
@@ -155,7 +175,7 @@ const deleteDocument = async (req, res) => {
       });
     }
 
-    await removeFileIfExists(document.path);
+    await deleteGridFsFile(document.fileId);
     await Document.findByIdAndDelete(id);
 
     return res.status(200).json({

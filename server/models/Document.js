@@ -14,8 +14,8 @@ const documentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  path: {
-    type: String,
+  fileId: {
+    type: mongoose.Schema.Types.ObjectId,
     required: true
   },
   status: {

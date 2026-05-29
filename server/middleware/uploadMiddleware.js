@@ -1,21 +1,24 @@
-const fs = require("fs");
 const path = require("path");
 const multer = require("multer");
+const mongoose = require("mongoose");
+const { GridFsStorage } = require("multer-gridfs-storage");
 
-const uploadDir = path.join(__dirname, "..", "uploads");
+const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
+const storage = new GridFsStorage({
+  db: mongoose.connection.asPromise().then(() => mongoose.connection.db),
+  file: (req, file) => {
     const timestamp = Date.now();
     const safeOriginalName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, "_");
-    cb(null, `${timestamp}-${safeOriginalName}`);
+
+    return {
+      bucketName: "documents",
+      filename: `${timestamp}-${safeOriginalName}`,
+      contentType: "application/pdf",
+      metadata: {
+        originalName: file.originalname
+      }
+    };
   }
 });
 
@@ -27,14 +30,15 @@ const fileFilter = (req, file, cb) => {
     return cb(new Error("Only PDF files are allowed"));
   }
 
-  cb(null, true);
+  return cb(null, true);
 };
 
 const upload = multer({
   storage,
   fileFilter,
   limits: {
-    fileSize: 20 * 1024 * 1024
+    fileSize: MAX_FILE_SIZE,
+    files: 20
   }
 });
 

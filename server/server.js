@@ -1,5 +1,4 @@
 const http = require("http");
-const path = require("path");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const express = require("express");
@@ -28,7 +27,6 @@ connectDB();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/documents", documentRoutes);
 app.use("/api/notifications", notificationRoutes);
@@ -58,6 +56,16 @@ app.use((err, req, res, next) => {
     if (err.code === "LIMIT_FILE_SIZE") {
       message = "File size cannot exceed 20MB";
     }
+
+    if (err.code === "LIMIT_FILE_COUNT") {
+      message = "Cannot upload more than 20 files at once";
+    }
+
+    if (err.code === "LIMIT_UNEXPECTED_FILE") {
+      message = "Unexpected file field";
+    }
+  } else if (message === "Only PDF files are allowed") {
+    statusCode = 400;
   }
 
   res.status(statusCode).json({
