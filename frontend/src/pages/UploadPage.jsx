@@ -89,7 +89,7 @@ function UploadPage() {
     );
 
     if (selectedFiles.length > 3) {
-      toast(`Upload in progress - processing ${selectedFiles.length} files in background.`);
+      toast(`Upload in progress — processing ${selectedFiles.length} files in background.`);
     }
 
     try {

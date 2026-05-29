@@ -1,10 +1,4 @@
-import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import {
-  getNotifications,
-  markAllNotificationsRead,
-  markNotificationRead
-} from "../services/api.js";
 
 const typeStyles = {
   success: "bg-emerald-100 text-emerald-700",
@@ -13,7 +7,7 @@ const typeStyles = {
 };
 
 function formatNotificationDate(notification) {
-  const value = notification.createdAt || notification.timestamp;
+  const value = notification.timestamp || notification.createdAt;
   if (!value) return "-";
   return new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
@@ -21,36 +15,17 @@ function formatNotificationDate(notification) {
   }).format(new Date(value));
 }
 
-function NotificationsPage() {
-  const [notifications, setNotifications] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const unreadCount = notifications.filter((notification) => !notification.read).length;
-
-  const loadNotifications = async () => {
-    try {
-      setIsLoading(true);
-      const response = await getNotifications();
-      setNotifications(response.data?.notifications || []);
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load notifications");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadNotifications();
-  }, []);
-
+function NotificationsPage({
+  notifications,
+  isLoading,
+  unreadCount,
+  onMarkRead,
+  onMarkAllRead,
+  onRefresh
+}) {
   const handleMarkRead = async (id) => {
     try {
-      await markNotificationRead(id);
-      setNotifications((current) =>
-        current.map((notification) =>
-          notification._id === id ? { ...notification, read: true } : notification
-        )
-      );
+      await onMarkRead(id);
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update notification");
     }
@@ -58,10 +33,7 @@ function NotificationsPage() {
 
   const handleMarkAllRead = async () => {
     try {
-      await markAllNotificationsRead();
-      setNotifications((current) =>
-        current.map((notification) => ({ ...notification, read: true }))
-      );
+      await onMarkAllRead();
       toast.success("All notifications marked as read");
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to update notifications");
@@ -79,14 +51,19 @@ function NotificationsPage() {
             System Notifications
           </h1>
         </div>
-        <button
-          type="button"
-          className="primary-button"
-          disabled={!unreadCount}
-          onClick={handleMarkAllRead}
-        >
-          Mark All Read
-        </button>
+        <div className="flex gap-3">
+          <button type="button" className="secondary-button" onClick={onRefresh}>
+            Refresh
+          </button>
+          <button
+            type="button"
+            className="primary-button"
+            disabled={!unreadCount}
+            onClick={handleMarkAllRead}
+          >
+            Mark All Read
+          </button>
+        </div>
       </div>
 
       <section className="dashboard-card overflow-hidden">

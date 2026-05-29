@@ -21,6 +21,20 @@ const getUploadedFiles = (req) => {
 
 const escapeHeaderValue = (value) => String(value).replace(/["\\\r\n]/g, "_");
 
+const createAndEmitNotification = async (req, payload) => {
+  const notification = await Notification.create({
+    ...payload,
+    timestamp: new Date()
+  });
+  const io = req.app.get("io");
+
+  if (io) {
+    io.emit("notification", notification);
+  }
+
+  return notification;
+};
+
 const deleteGridFsFile = async (fileId) => {
   try {
     await getDocumentsBucket().delete(new mongoose.Types.ObjectId(fileId));
@@ -44,11 +58,9 @@ const uploadFileToGridFs = (file) =>
     });
 
     uploadStream.on("error", reject);
-    uploadStream.on("finish", (gridFile) => {
+    uploadStream.on("finish", () => {
       resolve({
-        id: gridFile._id,
-        length: gridFile.length,
-        uploadDate: gridFile.uploadDate
+        id: uploadStream.id
       });
     });
 
@@ -64,6 +76,13 @@ const uploadDocuments = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "No files uploaded"
+      });
+    }
+
+    if (files.length > 3) {
+      await createAndEmitNotification(req, {
+        message: `Upload in progress \u2014 processing ${files.length} files in background.`,
+        type: "info"
       });
     }
 
@@ -83,9 +102,9 @@ const uploadDocuments = async (req, res) => {
     );
 
     if (files.length > 3) {
-      await Notification.create({
-        message: `Upload in progress — processing ${files.length} files in background.`,
-        type: "info"
+      await createAndEmitNotification(req, {
+        message: `${files.length} files uploaded successfully`,
+        type: "success"
       });
     }
 
