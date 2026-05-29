@@ -14,6 +14,10 @@ export const uploadDocuments = (formData, onUploadProgress) =>
 
 export const getDocuments = () => api.get("/documents");
 
+export const getStorageIntegrity = () => api.get("/documents/storage-integrity");
+
+export const repairStorage = () => api.post("/documents/storage-repair");
+
 export const deleteDocument = (id) => api.delete(`/documents/${id}`);
 
 export const downloadDocument = (id) =>

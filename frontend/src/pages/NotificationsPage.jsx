@@ -23,6 +23,7 @@ function NotificationsPage({
   onMarkAllRead,
   onRefresh
 }) {
+  const visibleNotifications = notifications.filter((notification) => !notification.read);
   const handleMarkRead = async (id) => {
     try {
       await onMarkRead(id);
@@ -68,7 +69,7 @@ function NotificationsPage({
 
       <section className="dashboard-card overflow-hidden">
         <div className="flex items-center justify-between border-b border-blue-100 px-5 py-4">
-          <h2 className="text-lg font-bold text-slate-950">All Notifications</h2>
+          <h2 className="text-lg font-bold text-slate-950">Unread Notifications</h2>
           <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-brand-700">
             {unreadCount} unread
           </span>
@@ -81,9 +82,9 @@ function NotificationsPage({
               Loading notifications
             </span>
           </div>
-        ) : notifications.length ? (
+        ) : visibleNotifications.length ? (
           <div className="divide-y divide-blue-50">
-            {notifications.map((notification) => (
+            {visibleNotifications.map((notification) => (
               <article
                 key={notification._id}
                 className={`flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between ${
@@ -125,7 +126,7 @@ function NotificationsPage({
           </div>
         ) : (
           <div className="px-5 py-10 text-center text-sm font-medium text-slate-500">
-            No notifications found
+            No unread notifications
           </div>
         )}
       </section>

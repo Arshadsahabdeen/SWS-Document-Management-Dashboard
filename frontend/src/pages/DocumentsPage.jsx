@@ -64,7 +64,7 @@ function DocumentsPage() {
     try {
       setDeletingId(id);
       await deleteDocument(id);
-      setDocuments((current) => current.filter((document) => document._id !== id));
+      await loadDocuments();
       toast.success("Document deleted successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Delete failed");

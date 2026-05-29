@@ -2,6 +2,8 @@ const express = require("express");
 const {
   uploadDocuments,
   getDocuments,
+  getStorageIntegrity,
+  repairStorage,
   downloadDocument,
   deleteDocument
 } = require("../controllers/documentController");
@@ -18,6 +20,8 @@ router.post(
   uploadDocuments
 );
 router.get("/", getDocuments);
+router.get("/storage-integrity", getStorageIntegrity);
+router.post("/storage-repair", repairStorage);
 router.get("/download/:id", downloadDocument);
 router.delete("/:id", deleteDocument);
 

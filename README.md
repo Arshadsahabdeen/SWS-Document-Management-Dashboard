@@ -26,3 +26,19 @@ npm run server
 ```bash
 npm run client
 ```
+
+## Running Tests
+
+Backend:
+
+```bash
+cd server
+npm test
+```
+
+Frontend:
+
+```bash
+cd frontend
+npm run test
+```
